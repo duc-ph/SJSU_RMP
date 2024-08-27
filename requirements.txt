@@ -1,0 +1,7 @@
+tqdm
+ipywidgets
+google-search-results
+notebook
+jupyter
+tenacity
+python-dotenv
