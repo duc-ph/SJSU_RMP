@@ -1,36 +1,171 @@
-function runScript() {
-  var iframe = document.getElementById("ptifrmtgtframe");
-  let elements = iframe.contentWindow.document.querySelectorAll('[id^="MTG_INSTR$"]');
+const RMP_RATING_COL_NAME = 'RMP Rating';
 
-  // Remove any existing message to avoid duplicates
-  const existingMessage = document.getElementById('extension-message');
-  if (existingMessage) {
-      existingMessage.remove();
-  }
-
-  const message = document.createElement("p");
-  // Set an ID to the message to prevent duplicates
-  message.id = "extension-message";
-
-  // Get the current timestamp
-  const timestamp = new Date().toLocaleString();
-
-  // Add the elements length and timestamp to the text content
-  message.textContent = `${elements.length} elements found at ${timestamp}`;
-
-  // Apply some basic styling so it's visible
-  message.style.fontSize = "20px";
-  message.style.color = "red";
-  message.style.fontWeight = "bold";
-  message.style.textAlign = "center";
-  message.style.marginTop = "20px";
-
-  // Insert the message at the beginning of the body
-  document.body.insertAdjacentElement("afterbegin", message);
+function ngrams(string, n = 3) {
+    string = string.toLowerCase();
+    string = string.replace(/[^a-z0-9]/g, ''); // Remove non-alphanumeric characters
+    let ngramsArray = [];
+    for (let i = 0; i <= string.length - n; i++) {
+        ngramsArray.push(string.substring(i, i + n));
+    }
+    return ngramsArray;
 }
 
-// Run the script every 5 seconds
-setInterval(runScript, 5000);
+function tanimotoCoefficient(name1, name2, n = 3) {
+    let ngrams1 = new Set(ngrams(name1, n));
+    let ngrams2 = new Set(ngrams(name2, n));
+    
+    let intersection = new Set([...ngrams1].filter(x => ngrams2.has(x)));
+    let union = new Set([...ngrams1, ...ngrams2]);
+    
+    return union.size !== 0 ? intersection.size / union.size : 0;
+}
 
-// Optionally, run the script once immediately when the content script is loaded
-runScript();
+function insertTeachersRatings(elements, iframe) {
+    chrome.storage.local.get('teacher_data', (result) => {
+        const teacher_data = result.teacher_data || {};
+
+        let names = new Set();
+        elements.forEach(element => {
+            names.add(element.textContent);
+        });
+
+        let name_lookup = {};
+        names.forEach(name => {
+            let best_match = '';
+            let highest_score = 0;
+
+            for (let teacher_name in teacher_data) {
+                let score = tanimotoCoefficient(name, teacher_name);
+                if (score > highest_score) {
+                    highest_score = score;
+                    best_match = teacher_name;
+                }
+            }
+
+            name_lookup[name] = {
+                matchQuality: highest_score,
+                data: best_match ? teacher_data[best_match] : undefined
+            };
+        });
+
+        elements.forEach((element, index) => {
+            let name = element.textContent;
+            let tableId = `SSR_CLSRCH_MTG1$scroll$${index}`;
+            let table = iframe.contentWindow.document.getElementById(tableId);
+
+            if (table) {
+                let ratingContent = document.createElement('div');
+                ratingContent.style.fontWeight = 'bold';
+
+                let rmpName = document.createElement('a');
+
+                let teacher = name_lookup[name];
+                match_quality = teacher.matchQuality;
+
+                if (match_quality == 0){
+                    ratingContent.textContent = 'Unknown';
+                    rmpName.textContent = 'Unknown';
+                } else {
+                    data = teacher.data
+                    // Convert the avgRating to a float with one decimal place
+                    data.avgRating = parseFloat(data.avgRating).toFixed(1);
+                    let display_value = `${data.avgRating} (${data.numRatings})`;
+                    ratingContent.textContent = display_value;
+
+                    // Set the color based on the avgRating value
+                    if (data.avgRating < 3) {
+                        ratingContent.style.color = '#ed5a5a';
+                    } else if (data.avgRating >= 3 && data.avgRating < 4) {
+                        ratingContent.style.color = '#FFB504';
+                    } else if (data.avgRating >= 4) {
+                        ratingContent.style.color = '#28cf1f';
+                    };
+
+                    // Add hyperlink for professor name
+                    rmpName.textContent = `${data.firstName} ${data.lastName}`
+                    rmpName.href = `https://www.ratemyprofessors.com/professor/${data.legacyId}`;
+                    rmpName.target = '_blank';
+                };
+
+                // Assuming that the table has a header row and a value row, add a new column with the RMP Rating
+                let headerRow = table.rows[0];
+                let valueRow = table.rows[1];
+
+                if (headerRow && valueRow) {
+                    // Add column headers
+                    const colNames = [RMP_RATING_COL_NAME, 'RMP Name'];
+                    for (let colName of colNames) {
+                        let newHeaderCell = document.createElement('th');
+                        newHeaderCell.scope = 'col';
+                        newHeaderCell.classList.add('gh-table-heading');
+                        newHeaderCell.textContent = colName;
+                        newHeaderCell.style.color = 'white';
+                        newHeaderCell.style.fontWeight = 'bold';
+                        newHeaderCell.style.whiteSpace = 'normal'; // Prevent wrapping in header if needed
+                        headerRow.appendChild(newHeaderCell);
+                    }
+                
+                    // Add the rating value and professor name in the new columns
+                    const colVals = [ratingContent, rmpName];
+                    for (let colVal of colVals) {
+                        let newValueCell = document.createElement('td');
+                        newValueCell.appendChild(colVal);
+                        newValueCell.style.whiteSpace = 'nowrap'; // Allow text to wrap naturally
+                        newValueCell.style.zIndex = '1'; // Ensure the link is always on top and clickable
+                        valueRow.appendChild(newValueCell);
+                    }
+                }
+            }
+        });
+    });
+};
+
+
+function observePage() {
+    console.log('Observing page')
+    // Check if the observer is already running to avoid duplicate observers
+    const observer = new MutationObserver((mutations, observer) => {
+        var iframe = document.getElementById("ptifrmtgtframe");
+        if (!iframe){
+            return;
+        }
+        console.log('checking for element')
+
+        // Check if we're on the right page
+        let elements = iframe.contentWindow.document.querySelectorAll('[id^="MTG_INSTR$"]');
+
+        // Check if we have already ran the script before
+        let table = iframe.contentWindow.document.getElementById('SSR_CLSRCH_MTG1$scroll$0');
+        if (!table){
+            return;
+        };
+        let columnExists = false;
+        let headerRow = table.getElementsByTagName('thead')[0].getElementsByTagName('tr')[0];
+        let headerCells = headerRow.getElementsByTagName('th');
+        for (let i = 0; i < headerCells.length; i++) {
+            if (headerCells[i].textContent.trim() === RMP_RATING_COL_NAME) {
+                columnExists = true;
+                break;
+            }
+        }
+
+        if (elements && !columnExists) {
+                insertTeachersRatings(elements, iframe);
+        }
+    });
+
+    // Start observing the entire document for changes
+    observer.observe(document, {
+        childList: true,
+        subtree: true,
+    });
+}
+
+// Ensure the document is fully loaded before starting the observer
+if (document.readyState === "complete" || document.readyState === "interactive") {
+    console.log('running observePage()')
+    observePage();
+} else {
+    console.log('running event listener')
+    window.addEventListener("DOMContentLoaded", observePage);
+}
