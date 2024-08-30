@@ -60,13 +60,13 @@ function insertTeachersRatings(elements, iframe) {
                 let rmpName = document.createElement('a');
 
                 let teacher = name_lookup[name];
-                match_quality = teacher.matchQuality;
+                let match_quality = teacher.matchQuality;
 
                 if (match_quality == 0){
                     ratingContent.textContent = 'Unknown';
                     rmpName.textContent = 'Unknown';
                 } else {
-                    data = teacher.data
+                    let data = teacher.data;
                     // Convert the avgRating to a float with one decimal place
                     data.avgRating = parseFloat(data.avgRating).toFixed(1);
                     let display_value = `${data.avgRating} (${data.numRatings})`;
@@ -82,10 +82,15 @@ function insertTeachersRatings(elements, iframe) {
                     };
 
                     // Add hyperlink for professor name
-                    rmpName.textContent = `${data.firstName} ${data.lastName}`
+                    rmpName.textContent = `${data.firstName} ${data.lastName}`;
                     rmpName.href = `https://www.ratemyprofessors.com/professor/${data.legacyId}`;
                     rmpName.target = '_blank';
-                };
+
+                    // Add the ❗ icon if match quality is less than 0.7
+                    if (match_quality < 0.7) {
+                        rmpName.textContent += ' ❗';
+                    }
+                }
 
                 // Assuming that the table has a header row and a value row, add a new column with the RMP Rating
                 let headerRow = table.rows[0];
