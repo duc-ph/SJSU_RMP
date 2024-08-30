@@ -10,7 +10,11 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     }
 });
 
-checkAndUpdateData()
+chrome.runtime.onStartup.addListener( () => {
+    console.log('Updating data on startup');
+    checkAndUpdateData();
+});
+
 
 async function fetchFileList() {
     const url = 'https://api.github.com/repos/thiel-ph/SJSU_RMP/contents/teacher_data';
