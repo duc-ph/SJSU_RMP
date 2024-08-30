@@ -88,7 +88,7 @@ function insertTeachersRatings(elements, iframe) {
 
                     // Add the ❗ icon if match quality is less than 0.7
                     if (match_quality < 0.7) {
-                        rmpName.textContent += ' ❗';
+                        rmpName.textContent = '❓ ' + rmpName.textContent;
                     }
                 }
 
