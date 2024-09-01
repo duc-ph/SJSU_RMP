@@ -96,6 +96,13 @@ function insertTeachersRatings(elements, iframe) {
                 let headerRow = table.rows[0];
                 let valueRow = table.rows[1];
 
+                let headerCells = headerRow.getElementsByTagName('th');
+                for (let i = 0; i < headerCells.length; i++) {
+                    if (headerCells[i].textContent.trim() === RMP_RATING_COL_NAME) {
+                        return;
+                    }
+                }
+
                 if (headerRow && valueRow) {
                     // Add column headers
                     const colNames = [RMP_RATING_COL_NAME, 'RMP Name'];
@@ -145,14 +152,7 @@ function observePage() {
             return;
         };
         let columnExists = false;
-        let headerRow = table.getElementsByTagName('thead')[0].getElementsByTagName('tr')[0];
-        let headerCells = headerRow.getElementsByTagName('th');
-        for (let i = 0; i < headerCells.length; i++) {
-            if (headerCells[i].textContent.trim() === RMP_RATING_COL_NAME) {
-                columnExists = true;
-                break;
-            }
-        }
+        // let headerRow = table.getElementsByTagName('thead')[0].getElementsByTagName('tr')[0];
 
         if (elements && !columnExists) {
                 insertTeachersRatings(elements, iframe);
