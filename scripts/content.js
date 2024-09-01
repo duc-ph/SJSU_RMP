@@ -86,9 +86,9 @@ function insertTeachersRatings(elements, iframe) {
                     rmpName.href = `https://www.ratemyprofessors.com/professor/${data.legacyId}`;
                     rmpName.target = '_blank';
 
-                    // Add the ❗ icon if match quality is less than 0.7
-                    if (match_quality < 0.7) {
-                        rmpName.textContent = '❓ ' + rmpName.textContent;
+                    // Add the warning icon if match quality is less than 0.7
+                    if (match_quality < 0.8) {
+                        rmpName.textContent = rmpName.textContent + '❓';
                     }
                 }
 
