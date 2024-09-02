@@ -2,12 +2,15 @@
   "manifest_version": 3,
   "name": "SJSU RateMyProfessor",
   "version": "1.0",
-  "description": "Display the rating of every professor in the MySJSU class search page.",
+  "description": "Display the Rate My Professors rating of every teacher in the MySJSU class search page.",
   "icons": {
     "16": "images/icon-16.png",
     "32": "images/icon-32.png",
     "48": "images/icon-48.png",
     "128": "images/icon-128.png"
+  },
+  "action": {
+    "default_popup": "intro.html"
   },
   "permissions": [
     "storage",
