@@ -96,13 +96,6 @@ function insertTeachersRatings(elements, iframe) {
                 let headerRow = table.rows[0];
                 let valueRow = table.rows[1];
 
-                let headerCells = headerRow.getElementsByTagName('th');
-                for (let i = 0; i < headerCells.length; i++) {
-                    if (headerCells[i].textContent.trim() === RMP_RATING_COL_NAME) {
-                        return;
-                    }
-                }
-
                 if (headerRow && valueRow) {
                     // Add column headers
                     const colNames = [RMP_RATING_COL_NAME, 'RMP Name'];
@@ -132,6 +125,7 @@ function insertTeachersRatings(elements, iframe) {
     });
 };
 
+let lastPageIsClassSearch = false;
 
 function observePage() {
     console.log('Observing page')
@@ -141,21 +135,19 @@ function observePage() {
         if (!iframe){
             return;
         }
-        console.log('checking for element')
 
         // Check if we're on the right page
         let elements = iframe.contentWindow.document.querySelectorAll('[id^="MTG_INSTR$"]');
-
-        // Check if we have already ran the script before
         let table = iframe.contentWindow.document.getElementById('SSR_CLSRCH_MTG1$scroll$0');
         if (!table){
+            lastPageIsClassSearch = false;
             return;
         };
-        let columnExists = false;
-        // let headerRow = table.getElementsByTagName('thead')[0].getElementsByTagName('tr')[0];
 
-        if (elements && !columnExists) {
-                insertTeachersRatings(elements, iframe);
+        const onCorrectPage = elements != null;
+        if (onCorrectPage && lastPageIsClassSearch === false) {
+            lastPageIsClassSearch = true;
+            insertTeachersRatings(elements, iframe);
         }
     });
 
