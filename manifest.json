@@ -13,8 +13,7 @@
     "default_popup": "intro.html"
   },
   "permissions": [
-    "storage",
-    "alarms"
+    "storage"
   ],
   "host_permissions": [
     "https://api.github.com/"
