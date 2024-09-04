@@ -1,20 +1,21 @@
-// Set up the alarm when the service worker starts
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.alarms.create('checkForUpdates', { periodInMinutes: 10 });
-});
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'checkForUpdates') {
+        console.log('Received message to check for updates.');
+        // Wrap the async function in a Promise
+        (async () => {
+            try {
+                await checkAndUpdateData();
+                sendResponse({ status: 'Update process completed' }); // Send the response after completion
+            } catch (error) {
+                console.error('Error during update:', error);
+                sendResponse({ status: 'Update process failed', error: error.message });
+            }
+        })();
 
-// Listen for the alarm and run the check
-chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name === 'checkForUpdates') {
-        checkAndUpdateData();
+        // Ensure the message channel stays open for the asynchronous sendResponse
+        return true;
     }
 });
-
-chrome.runtime.onStartup.addListener( () => {
-    console.log('Updating data on startup');
-    checkAndUpdateData();
-});
-
 
 async function fetchFileList() {
     const url = 'https://api.github.com/repos/thiel-ph/SJSU_RMP/contents/teacher_data';

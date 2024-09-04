@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SJSU RateMyProfessor",
+  "name": "SJSU Rate My Professors",
   "version": "1.0",
   "description": "Display the Rate My Professors rating of every teacher in the MySJSU class search page.",
   "icons": {
