@@ -125,6 +125,34 @@ function insertTeachersRatings(elements, iframe) {
     });
 };
 
+function notifyBackgroundToUpdate() {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: 'checkForUpdates' }, (response) => {
+            if (response && response.status === 'Update process completed') {
+                console.log('Update process completed');
+                resolve();
+            } else if (response && response.status === 'Update process failed') {
+                console.error('Update process failed:', response.error);
+                reject(new Error(response.error));
+            } else {
+                console.error('No response or unknown status');
+                reject(new Error('No response or unknown status'));
+            }
+        });
+    });
+}
+
+async function handlePageProcessing(elements, iframe) {
+    try {
+        await notifyBackgroundToUpdate();  // Wait for the background script to finish
+        insertTeachersRatings(elements, iframe);  // Now run the ratings insertion
+    } catch (error) {
+        console.error('Error or no update needed:', error);
+        // Proceed with the ratings insertion anyway, or handle the error
+        insertTeachersRatings(elements, iframe);
+    }
+}
+
 let lastPageIsClassSearch = false;
 
 function observePage() {
@@ -147,7 +175,7 @@ function observePage() {
         const onCorrectPage = elements != null;
         if (onCorrectPage && lastPageIsClassSearch === false) {
             lastPageIsClassSearch = true;
-            insertTeachersRatings(elements, iframe);
+            handlePageProcessing(elements, iframe);
         }
     });
 
