@@ -1,0 +1,10 @@
+[Unit]
+Description=Fetch SJSU RateMyProfessors data and publish to GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/SJSU_RMP
+ExecStart=/usr/bin/python3 /root/SJSU_RMP/scripts/update_rmp_data.py
+TimeoutStartSec=1800
