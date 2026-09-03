@@ -28,6 +28,10 @@ SCHOOL_ID = "U2Nob29sLTg4MQ=="  # SJSU
 GRAPHQL_URL = "https://www.ratemyprofessors.com/graphql"
 PAGE_SIZE = 1000
 
+# Sanity floor for the *total* across all pages (~5000 as of 2026-09), not a
+# per-page check -- the final page is legitimately short.
+MIN_TOTAL_TEACHERS = 2000
+
 # The Basic credentials are the public "test:test" token the RMP web app ships
 # with. A browser-like User-Agent is required as well -- without it the edge
 # returns 403. No login cookie is involved.
@@ -146,8 +150,11 @@ def main():
     teachers = fetch_all_teachers()
 
     # A partial scrape would silently publish a truncated file to every user.
-    if len(teachers) < 1000:
-        log(f"ABORT: only {len(teachers)} professors, expected thousands")
+    if len(teachers) < MIN_TOTAL_TEACHERS:
+        log(
+            f"ABORT: scrape returned {len(teachers)} professors, "
+            f"below the {MIN_TOTAL_TEACHERS} floor; refusing to publish"
+        )
         return 1
     log(f"fetched {len(teachers)} professors")
 
